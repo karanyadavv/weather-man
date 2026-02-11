@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import SearchBar from './components/SearchBar';
 import WeatherCard from './components/WeatherCard';
 import ForecastList from './components/ForecastList';
+import { WeatherCardSkeleton, ForecastSkeleton } from './components/Skeleton';
+import ErrorMessage from './components/ErrorMessage';
 import { getCurrentWeather, getForecast } from './api/weatherApi';
 import './App.css';
 
@@ -10,10 +12,14 @@ function App() {
   const [forecastData, setForecastData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const lastCityRef = useRef('');
 
   const handleSearch = async (city) => {
+    lastCityRef.current = city;
     setLoading(true);
     setError(null);
+    setWeatherData(null);
+    setForecastData(null);
     try {
       const [weather, forecast] = await Promise.all([
         getCurrentWeather(city),
@@ -22,11 +28,22 @@ function App() {
       setWeatherData(weather);
       setForecastData(forecast);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to fetch weather data');
-      setWeatherData(null);
-      setForecastData(null);
+      const status = err.response?.status;
+      if (status === 404) {
+        setError(`City "${city}" not found. Please check the spelling and try again.`);
+      } else if (status === 429) {
+        setError('Too many requests. Please wait a moment and try again.');
+      } else {
+        setError(err.response?.data?.error || 'Failed to fetch weather data. Please try again.');
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    if (lastCityRef.current) {
+      handleSearch(lastCityRef.current);
     }
   };
 
@@ -41,15 +58,20 @@ function App() {
       <SearchBar onSearch={handleSearch} />
 
       {loading && (
-        <p className="mt-8 text-gray-500 animate-pulse">Loading…</p>
+        <>
+          <WeatherCardSkeleton />
+          <ForecastSkeleton />
+        </>
       )}
 
-      {error && (
-        <p className="mt-8 text-red-500 text-sm">{error}</p>
-      )}
+      {error && <ErrorMessage message={error} onRetry={handleRetry} />}
 
-      <WeatherCard data={weatherData} />
-      <ForecastList data={forecastData} />
+      {!loading && !error && (
+        <>
+          <WeatherCard data={weatherData} />
+          <ForecastList data={forecastData} />
+        </>
+      )}
     </div>
   );
 }
