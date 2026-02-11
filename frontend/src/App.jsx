@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import SearchBar from './components/SearchBar';
 import WeatherCard from './components/WeatherCard';
-import { getCurrentWeather } from './api/weatherApi';
+import ForecastList from './components/ForecastList';
+import { getCurrentWeather, getForecast } from './api/weatherApi';
 import './App.css';
 
 function App() {
   const [weatherData, setWeatherData] = useState(null);
+  const [forecastData, setForecastData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -13,11 +15,16 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getCurrentWeather(city);
-      setWeatherData(data);
+      const [weather, forecast] = await Promise.all([
+        getCurrentWeather(city),
+        getForecast(city),
+      ]);
+      setWeatherData(weather);
+      setForecastData(forecast);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch weather data');
       setWeatherData(null);
+      setForecastData(null);
     } finally {
       setLoading(false);
     }
@@ -42,6 +49,7 @@ function App() {
       )}
 
       <WeatherCard data={weatherData} />
+      <ForecastList data={forecastData} />
     </div>
   );
 }

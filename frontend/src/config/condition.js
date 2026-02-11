@@ -1,4 +1,4 @@
-const CONDITION_CONFIG = {
+export const CONDITION_CONFIG = {
     Clear: { icon: '☀️', label: 'Clear Sky' },
     Clouds: { icon: '☁️', label: 'Cloudy' },
     Rain: { icon: '🌧️', label: 'Rainy' },
