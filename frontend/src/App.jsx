@@ -1,16 +1,30 @@
+import { useState } from 'react';
 import SearchBar from './components/SearchBar';
+import WeatherCard from './components/WeatherCard';
+import { getCurrentWeather } from './api/weatherApi';
 import './App.css';
-import { getCurrentWeather, getForecast } from './api/weatherApi';
+
 function App() {
-  const handleSearch = (city) => {
-    console.log('Searching weather for:', city);
-    // TODO: call backend API and update weather state
-    getCurrentWeather(city);
-    getForecast(city);
+  const [weatherData, setWeatherData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSearch = async (city) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getCurrentWeather(city);
+      setWeatherData(data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to fetch weather data');
+      setWeatherData(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center mt-20 px-4 py-12">
+    <div className="min-h-screen flex flex-col items-center mt-10 px-4 py-12">
       <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-2 tracking-tight">
         Weather Man
       </h1>
@@ -18,6 +32,16 @@ function App() {
         Search any city to get the latest weather
       </p>
       <SearchBar onSearch={handleSearch} />
+
+      {loading && (
+        <p className="mt-8 text-gray-500 animate-pulse">Loading…</p>
+      )}
+
+      {error && (
+        <p className="mt-8 text-red-500 text-sm">{error}</p>
+      )}
+
+      <WeatherCard data={weatherData} />
     </div>
   );
 }
