@@ -1,10 +1,12 @@
 import SearchBar from './components/SearchBar';
 import './App.css';
-
+import { getCurrentWeather, getForecast } from './api/weatherApi';
 function App() {
   const handleSearch = (city) => {
     console.log('Searching weather for:', city);
     // TODO: call backend API and update weather state
+    getCurrentWeather(city);
+    getForecast(city);
   };
 
   return (
